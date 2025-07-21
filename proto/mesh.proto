@@ -1,0 +1,94 @@
+/*
+
+NodeInfo: Each worker broadcasts this regularly to announce its presence
+
+Job: Represents work to be done (shell commands, scripts, etc.)
+
+JobResult: The outcome after executing a job
+
+MeshMessage: A wrapper that contains any of the above messages
+
+Enums: Define valid states (NodeStatus, JobStatus, MessageType)
+
+*/
+
+syntax = "proto3";
+
+package mesh;
+
+option go_package = "github.com/retro-kernel/worker-mesh/proto/mesh";
+
+import "google/protobuf/timestamp.proto";
+
+// NodeInfo represents a worker node's current state
+message NodeInfo {
+  string node_id = 1;           // Unique identifier for this node
+  string address = 2;           // IP:PORT where this node can be reached
+  NodeStatus status = 3;        // Current operational status
+  google.protobuf.Timestamp last_heartbeat = 4;  // When this heartbeat was sent
+  map<string, string> metadata = 5;  // Additional node information
+  string version = 6;           // Protocol version for compatibility
+}
+
+// NodeStatus represents the operational state of a node
+enum NodeStatus {
+  UNKNOWN = 0;
+  IDLE = 1;        // Ready to accept work
+  BUSY = 2;        // Currently executing jobs
+  DRAINING = 3;    // Finishing current work, not accepting new jobs
+  FAILED = 4;      // Node has encountered an error
+}
+
+// Job represents a unit of work to be executed
+message Job {
+  string job_id = 1;            // Unique job identifier
+  string target_node_id = 2;    // Which node should execute this job
+  string command = 3;           // Shell command to execute
+  map<string, string> env = 4;  // Environment variables
+  int32 timeout_seconds = 5;    // Job timeout
+  google.protobuf.Timestamp created_at = 6;
+  JobStatus status = 7;
+  string created_by_node = 8;   // Which node submitted this job
+}
+
+// JobStatus represents the state of a job
+enum JobStatus {
+  JOB_UNKNOWN = 0;
+  JOB_PENDING = 1;    // Waiting to be executed
+  JOB_RUNNING = 2;    // Currently executing
+  JOB_COMPLETED = 3;  // Finished successfully
+  JOB_FAILED = 4;     // Finished with error
+  JOB_TIMEOUT = 5;    // Exceeded timeout limit
+}
+
+// JobResult contains the outcome of job execution
+message JobResult {
+  string job_id = 1;
+  string executor_node_id = 2;
+  int32 exit_code = 3;
+  string stdout = 4;
+  string stderr = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp finished_at = 7;
+  string error_message = 8;  // Human-readable error if any
+}
+
+// MeshMessage is the envelope for all mesh communications
+message MeshMessage {
+  MessageType type = 1;
+  oneof payload {
+    NodeInfo node_info = 2;
+    Job job = 3;
+    JobResult job_result = 4;
+  }
+  google.protobuf.Timestamp timestamp = 5;
+  string sender_node_id = 6;
+}
+
+// MessageType identifies what kind of message this is
+enum MessageType {
+  MESSAGE_UNKNOWN = 0;
+  HEARTBEAT = 1;      // NodeInfo broadcast
+  JOB_ASSIGNMENT = 2; // Job to be executed
+  JOB_RESULT = 3;     // Job execution result
+}
