@@ -411,6 +411,8 @@ sqlite3 worker_*.db "SELECT * FROM jobs ORDER BY created_at DESC LIMIT 5;"
 
 ---
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **⚠️ Development Status**: This is an experimental project built for learning distributed systems concepts. While functional, it's not recommended for production use without additional security and reliability improvements.
 
 **🔬 Learning Focus**: This project demonstrates UDP discovery, Protocol Buffers, peer-to-peer communication, and zero-config distributed systems. Perfect for understanding distributed computing fundamentals.
